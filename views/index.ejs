@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <h1 class="text-4xl font-bold text-center mb-8 text-blue-700">Quizzard</h1>
+      <div class="mb-8">
+        <p class="text-lg font-semibold">Welcome, <span id="user-name-display"></span></p>
+      </div>
+      <form id="quiz-form" class="hidden">
+        <div id="quiz-container" class="space-y-8"></div>
+        <button type="submit" class="mt-8 w-full bg-blue-600 text-white p-4 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">Submit</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    async function loadSectionName(sectionId) {
+      const response = await fetch(`/api/quiz/sections/${sectionId}`);
+      const section = await response.json();
+      document.getElementById('section-name-display').textContent = section.name;
+    }
+
+    async function loadQuestions(sectionId, difficulty) {
+      const response = await fetch(`/api/quiz/questions/${sectionId}/${difficulty}`);
+      const questions = await response.json();
+      const quizContainer = document.getElementById('quiz-container');
+      quizContainer.innerHTML = '';
+      questions.forEach((question, index) => {
+        const questionElem = document.createElement('div');
+        questionElem.classList.add('p-6', 'border', 'rounded-lg', 'shadow-sm', 'bg-gray-50');
+        questionElem.innerHTML = `
+          <p class="text-lg font-semibold mb-4">${index + 1}. ${question.question}</p>
+          <div class="ml-4 space-y-2">
+            <label class="block"><input type="radio" name="question-${question.id}" value="1" class="mr-2"> ${question.option1}</label>
+            <label class="block"><input type="radio" name="question-${question.id}" value="2" class="mr-2"> ${question.option2}</label>
+            <label class="block"><input type="radio" name="question-${question.id}" value="3" class="mr-2"> ${question.option3}</label>
+            <label class="block"><input type="radio" name="question-${question.id}" value="4" class="mr-2"> ${question.option4}</label>
+          </div>
+        `;
+        quizContainer.appendChild(questionElem);
+      });
+      document.getElementById('quiz-form').classList.remove('hidden');
+    }
+
+    document.getElementById('quiz-form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const data = {};
+      formData.forEach((value, key) => {
+        data[key] = value;
+      });
+
+      if (Object.keys(data).length === 0) {
+        alert('You cannot submit without answering any questions');
+        return;
+      }
+
+      const response = await fetch('/api/quiz/submit', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await response.json();
+      const userName = window.localStorage.getItem('userName');
+      const sectionId = window.localStorage.getItem('sectionId');
+      await fetch('/api/quiz/save-result', {
+        method: 'POST',
+        body: JSON.stringify({ userName, sectionId, result }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      window.location.href = `/result?score=${result.score}&total=${result.total}`;
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const userName = window.localStorage.getItem('userName');
+      const sectionId = window.localStorage.getItem('sectionId');
+      const difficulty = window.localStorage.getItem('difficulty');
+      if (!userName || !sectionId || !difficulty) {
+        window.location.href = '/';
+        return;
+      }
+      document.getElementById('user-name-display').textContent = userName;
+      loadSectionName(sectionId);
+      loadQuestions(sectionId, difficulty);
+    });
+  </script>
+</body>
+</html>

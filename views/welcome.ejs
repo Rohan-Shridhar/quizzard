@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quizzard - the #1 quiz app</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <h1 class="text-4xl font-bold text-center mb-8 text-blue-700">Welcome to Quizzard</h1>
+      <form id="welcome-form">
+        <div class="mb-4">
+          <label for="user-name" class="block text-lg font-semibold mb-2">Enter Your Name:</label>
+          <input type="text" id="user-name" class="block w-full p-2 border rounded-lg" required>
+        </div>
+        <div class="mb-4">
+          <label for="section-select" class="block text-lg font-semibold mb-2">Select Quiz Section</label>
+          <select id="section-select" class="block w-full p-2 border rounded-lg" required>
+            <option value="" disabled selected>Select a section</option>
+          </select>
+        </div>
+        <div class="mb-8">
+          <label for="difficulty-select" class="block text-lg font-semibold mb-2">Select Difficulty Level</label>
+          <select id="difficulty-select" class="block w-full p-2 border rounded-lg" required>
+            <option value="" disabled selected>Select difficulty level</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">Start Quiz</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    async function loadSections() {
+      const response = await fetch('/api/quiz/sections');
+      const sections = await response.json();
+      const sectionSelect = document.getElementById('section-select');
+      sections.forEach(section => {
+        const option = document.createElement('option');
+        option.value = section.id;
+        option.textContent = section.name;
+        sectionSelect.appendChild(option);
+      });
+
+      const savedSectionId = window.localStorage.getItem('sectionId');
+      if (savedSectionId) {
+        sectionSelect.value = savedSectionId;
+      }
+    }
+
+    document.getElementById('welcome-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const userName = document.getElementById('user-name').value;
+      const sectionId = document.getElementById('section-select').value;
+      const difficulty = document.getElementById('difficulty-select').value;
+      window.localStorage.setItem('userName', userName);
+      window.localStorage.setItem('sectionId', sectionId);
+      window.localStorage.setItem('difficulty', difficulty);
+      window.location.href = '/quiz';
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedUserName = window.localStorage.getItem('userName');
+      if (savedUserName) {
+        document.getElementById('user-name').value = savedUserName;
+      }
+
+      const savedDifficulty = window.localStorage.getItem('difficulty');
+      if (savedDifficulty) {
+        document.getElementById('difficulty-select').value = savedDifficulty;
+      }
+
+      loadSections();
+    });
+  </script>
+</body>
+</html>
