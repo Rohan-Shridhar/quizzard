@@ -1,0 +1,38 @@
+services:
+  # 1. MySQL Database (Private Service with Persistent Disk)
+  - type: pserv
+    name: quizzard-db
+    env: docker
+    dockerImage: mysql:8.0
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        value: quizzard_root_secure_pass
+      - key: MYSQL_DATABASE
+        value: quiz_app
+      - key: MYSQL_USER
+        value: quiz_user
+      - key: MYSQL_PASSWORD
+        value: quiz_secure_pass
+
+  # 2. Express Web App Service
+  - type: web
+    name: quizzard-web
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DB_HOST
+        value: quizzard-db
+      - key: DB_USER
+        value: quiz_user
+      - key: DB_PASSWORD
+        value: quiz_secure_pass
+      - key: DB_NAME
+        value: quiz_app
