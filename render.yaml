@@ -2,8 +2,8 @@ services:
   # 1. MySQL Database (Private Service with Persistent Disk)
   - type: pserv
     name: quizzard-db
-    env: docker
-    dockerImage: mysql:8.0
+    runtime: image
+    image: mysql:8.0
     disk:
       name: mysql-data
       mountPath: /var/lib/mysql
