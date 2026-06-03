@@ -20,6 +20,20 @@ router.get('/sections', async (req, res) => {
   }
 });
 
+router.get('/sections/:sectionId', async (req, res) => {
+  const { sectionId } = req.params;
+  try {
+    const [results] = await db.promise().query('SELECT * FROM sections WHERE id = ?', [sectionId]);
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Section not found' });
+    }
+    res.json(results[0]);
+  } catch (err) {
+    console.error('Error fetching section:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 router.get('/questions/:sectionId/:difficulty', async (req, res) => {
   const { sectionId, difficulty } = req.params;
   try {

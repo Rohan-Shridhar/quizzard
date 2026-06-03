@@ -39,6 +39,22 @@ describe('Quiz Routes', () => {
     ]);
   });
 
+  test('GET /api/quiz/sections/:sectionId should return the section if it exists', async () => {
+    db.query.mockResolvedValueOnce([[{ id: 1, name: 'Math' }]]);
+
+    const response = await request(app).get('/api/quiz/sections/1');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: 1, name: 'Math' });
+  });
+
+  test('GET /api/quiz/sections/:sectionId should return 404 if it does not exist', async () => {
+    db.query.mockResolvedValueOnce([[]]);
+
+    const response = await request(app).get('/api/quiz/sections/999');
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: 'Section not found' });
+  });
+
   test('GET /api/quiz/questions/:sectionId/:difficulty should return questions', async () => {
     const sectionId = 1;
     const difficulty = 'easy';
