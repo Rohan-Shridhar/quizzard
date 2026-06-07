@@ -1,95 +1,126 @@
-# 🧙‍♂️ Quizzard
+# Quizzard 🧙‍♂️
 
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-blue.svg)](https://nodejs.org/)
-[![License: ISC](https://img.shields.io/badge/License-ISC-green.svg)](https://opensource.org/licenses/ISC)
-[![Framework: Express](https://img.shields.io/badge/Framework-Express-lightgrey.svg)](https://expressjs.com/)
-[![Database: MySQL](https://img.shields.io/badge/Database-MySQL-blue.svg)](https://www.mysql.com/)
+An interactive, AI-powered quiz platform and custom study engine. Quizzard allows users to take standard tests across multiple difficulty levels, or paste custom study notes/documentation to dynamically generate custom multiple-choice quizzes with detailed, educational explanations on-the-fly using Google Gemini.
 
-**Quizzard** is a sleek, dynamic, and easy-to-use web quiz application. Users can select quiz sections, choose a difficulty level, answer questions, get instant scores, and save their results locally or in a persistent MySQL database.
+This project is designed specifically to be beginner-friendly for full-stack and open-source learning, featuring a zero-configuration local database and an automated local setup.
 
 ---
 
-## ✨ Features
+## 🛠️ Tech Stack & Architecture
 
-- 🎯 **Dynamic Quiz Loading**: Questions are fetched dynamically based on selected section and difficulty.
-- ⏱️ **Instant Grading**: Immediate score calculation and custom congratulatory message based on score percentage.
-- 💾 **Persisted Results**: Automatically logs completed quizzes to a MySQL database.
-- 🧑‍💻 **Developer Seeding**: Fully automated database seeding script for quick local development.
-- 🧪 **Mock-based Test Suite**: Clean unit testing for API endpoints using Jest and Supertest.
+Quizzard is built using a simple, modular server-rendered architecture:
 
----
-
-## 🛠️ Tech Stack
-
-- **Backend**: Node.js, Express.js
-- **Frontend**: EJS (Embedded JavaScript), HTML5, Tailwind CSS
-- **Database**: MySQL (using `mysql2` connector)
-- **Testing**: Jest, Supertest
+- **Frontend Interface (`/views`)**:
+  - **Engine**: EJS (Embedded JavaScript) templates rendering dynamic pages server-side.
+  - **Styling**: Modern, custom Vanilla CSS and Tailwind CSS, featuring a sleek, glassmorphic **Warm Charcoal & Gold/Amber** design theme.
+  - **Gamification**: Visual score gauge charts, concept reviews, and active selection feedback (correct vs incorrect option highlighting).
+- **Backend API & Server**:
+  - **Server**: Express.js handling page rendering and API endpoints.
+  - **AI Integration**: Official Google GenAI SDK (`@google/genai`) connecting to `gemini-2.5-flash` with strict JSON schemas to generate custom questions.
+  - **Database (`db.js` & `db.json`)**: Zero-dependency filesystem-based JSON database. No external database engines (like MySQL, MongoDB) or credentials are required. It automatically seeds initial categories (General Knowledge, Science) on its first run.
+- **Continuous Integration (`.github/workflows`)**:
+  - Automated CI workflow (`ci.yml`) runs tests and builds the application on every push or Pull Request.
 
 ---
 
-## 🚀 Quick Local Setup
+## 📂 Repository Layout
 
-Follow these simple steps to run Quizzard on your machine:
+```text
+quizzard/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md          # Template for reporting bugs
+│   │   ├── feature_request.md     # Template for requesting features
+│   │   └── new_quiz_category.md   # Template for suggesting quiz categories
+│   ├── PULL_REQUEST_TEMPLATE.md   # Template for pull request submissions
+│   └── workflows/
+│       └── ci.yml                 # GitHub Actions runner to run tests
+├── routes/
+│   └── quizRoutes.js              # REST endpoints for categories, questions, and submission
+├── scripts/
+│   └── dbReset.js                 # Re-initializes db.json to seed questions
+├── tests/
+│   └── routes/
+│       └── quizRoutes.test.js     # Jest/Supertest route test suite
+├── views/
+│   ├── welcome.ejs                # The onboarding & AI paste welcome tab layout
+│   ├── index.ejs                  # The quiz answering viewport with styled options
+│   └── result.ejs                 # Result page with Circular Score Gauge and Explanations
+├── db.js                          # Local database helper module
+├── db.json                        # Git-ignored local DB file (initialized dynamically)
+├── server.js                      # Express server entry point
+├── render.yaml                    # Free tier Render deployment configuration
+└── package.json                   # Dependencies and npm script wrappers
+```
 
-### 1. Configure the Environment
-Create a `.env` file in the root of the project:
+---
+
+## 🚀 Quick Start & Installation
+
+### 1. Prerequisites
+Make sure Node.js (v18.0.0 or higher) and npm (v9.0.0 or higher) are installed on your machine.
+
+### 2. Clone the Project & Install Dependencies
+Clone the repository, enter the folder, and install packages:
+```bash
+# Clone the repository
+git clone <your-fork-url>
+
+# Navigate into the project folder
+cd quizzard
+
+# Install dependencies
+npm install
+```
+
+### 3. Configure the Environment
+Create a `.env` file in the root of the project to enable the AI generator:
 ```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password  # Update with your MySQL password
-DB_NAME=quiz_app
+GEMINI_API_KEY=your_google_gemini_api_key
 PORT=3000
 ```
+*(You can get a free developer key from [Google AI Studio](https://ai.google.dev/aistudio))*
 
-### 2. Install Dependencies & Build
-Install all npm packages and ensure the binaries are marked executable:
-```bash
-npm install
-chmod +x node_modules/.bin/*
-```
-
-### 3. Automated Database Setup
-With MySQL running locally, initialize and seed the database with one command:
-```bash
-npm run db:setup
-```
-
-### 4. Start the Application
+### 4. Run the Application
 Start the development server with live-reloads:
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to start quizzing!
+Open [http://localhost:3000](http://localhost:3000) to start quizzing! The local database file (`db.json`) will be generated and seeded automatically.
 
 ---
 
 ## 📡 API Endpoints
 
-### Sections
-- `GET /api/quiz/sections` — Retrieve list of all quiz categories/sections.
-- `GET /api/quiz/sections/:sectionId` — Retrieve details about a single section by its ID.
+### Standard Endpoints
+- `GET /api/quiz/sections` — Fetch list of available categories.
+- `GET /api/quiz/sections/:sectionId` — Fetch metadata of a single section.
+- `GET /api/quiz/questions/:sectionId/:difficulty` — Fetch questions for a topic and difficulty level.
+- `POST /api/quiz/submit` — Grade and score an answer sheet.
+- `POST /api/quiz/save-result` — Save the quiz results to the database.
 
-### Questions
-- `GET /api/quiz/questions/:sectionId/:difficulty` — Retrieve questions matching the section and difficulty level (`easy`, `medium`, `hard`).
-
-### Submission & Saving
-- `POST /api/quiz/submit` — Submit an answer sheet and calculate the score.
-  - **Body**: `{ "question-1": "3", "question-2": "2" }`
-- `POST /api/quiz/save-result` — Save the score result into the persistent database.
-  - **Body**: `{ "userName": "Alice", "sectionId": 1, "result": { "score": 4, "total": 5 } }`
+### AI Endpoints
+- `POST /api/quiz/generate-ai` — Generate questions from copy-pasted notes using Gemini.
+  - **Body**: `{ "text": "notes...", "difficulty": "medium", "numQuestions": 5 }`
 
 ---
 
 ## 🧪 Testing
 
-Run the route unit test suite:
+Run the test suite using Jest:
 ```bash
 npm test
 ```
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing Guidelines
 
-We want to make contributing to Quizzard as easy as possible. Check out our [Contributing Guide](CONTRIBUTING.md) for full setup instructions, workflow tips, and testing requirements!
+We welcome contributions of all kinds! Whether you want to fix a bug, add a new layout feature, or write questions, Quizzard is designed to be accessible.
+
+1. Review our [Good First Issues & Feature Roadmap](./ISSUES.md) to pick an open task.
+2. Review our onboarding step-by-step instructions in [CONTRIBUTING.md](./CONTRIBUTING.md).
+3. **Workflow Rules**:
+   - Always branch off from the `development` branch (e.g. `git checkout -b feature/your-feature development`).
+   - Run tests (`npm test`) before submitting code.
+   - Open a PR targeting the `development` branch of the upstream repository.

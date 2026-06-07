@@ -1,72 +1,362 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quizzard - the #1 quiz app</title>
+  <title>Quizzard - Interactive AI Learning Platform</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+    }
+    .glass-card {
+      background: rgba(28, 25, 23, 0.75); /* warm dark stone background */
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .neon-border:focus-within {
+      border-color: rgba(245, 158, 11, 0.7);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+    .tab-active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fef3c7; /* warm amber-100 */
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .float-icon {
+      animation: float 4s ease-in-out infinite;
+    }
+    /* Loading animation dots */
+    .dot-pulse {
+      animation: pulse 1.4s infinite ease-in-out both;
+    }
+    .dot-pulse:nth-child(1) { animation-delay: -0.32s; }
+    .dot-pulse:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes pulse {
+      0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-      <h1 class="text-4xl font-bold text-center mb-8 text-blue-700">Welcome to Quizzard</h1>
-      <form id="welcome-form">
-        <div class="mb-4">
-          <label for="user-name" class="block text-lg font-semibold mb-2">Enter Your Name:</label>
-          <input type="text" id="user-name" class="block w-full p-2 border rounded-lg" required>
+<body class="bg-gradient-to-br from-[#0a0a0a] via-[#171513] to-[#0d0c0a] text-stone-100 min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
+  <!-- Decorative background warm gold glow blobs -->
+  <div class="absolute -top-40 -left-40 w-96 h-96 bg-amber-600/10 rounded-full blur-3xl -z-10"></div>
+  <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl -z-10"></div>
+
+  <div class="max-w-2xl w-full">
+    <!-- Header/Logo Area -->
+    <div class="text-center mb-8 relative">
+      <div class="inline-block float-icon mb-2 text-5xl">📚</div>
+      <h1 class="text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-yellow-400 to-orange-400">
+        Quizzard
+      </h1>
+      <p class="text-stone-400 mt-2 font-light tracking-wide text-sm sm:text-base">
+        Interactive study engine powered by local storage & Gemini AI
+      </p>
+    </div>
+
+    <!-- Main Card -->
+    <div class="glass-card rounded-2xl shadow-2xl p-6 sm:p-8 relative overflow-hidden transition-all duration-500">
+      
+      <!-- General Username Section -->
+      <div class="mb-6">
+        <label for="user-name" class="block text-sm font-semibold text-stone-300 mb-2 tracking-wide">ENTER YOUR NAME</label>
+        <div class="neon-border flex rounded-lg border border-stone-800 bg-stone-950/45 transition duration-300">
+          <span class="inline-flex items-center px-3 text-stone-600 text-lg">👤</span>
+          <input type="text" id="user-name" class="block w-full p-3 bg-transparent text-stone-100 placeholder-stone-600 focus:outline-none text-base" placeholder="What should we call you?" required>
         </div>
-        <div class="mb-4">
-          <label for="section-select" class="block text-lg font-semibold mb-2">Select Quiz Section</label>
-          <select id="section-select" class="block w-full p-2 border rounded-lg" required>
-            <option value="" disabled selected>Select a section</option>
-          </select>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="flex border-b border-stone-800 mb-6 gap-2">
+        <button type="button" id="tab-standard" class="flex-1 pb-3 text-sm font-medium border-b-2 border-transparent text-stone-400 hover:text-stone-200 transition duration-300 flex items-center justify-center gap-2">
+          <span>📖</span> Standard Quizzes
+        </button>
+        <button type="button" id="tab-ai" class="flex-1 pb-3 text-sm font-medium border-b-2 border-transparent text-stone-400 hover:text-stone-200 transition duration-300 flex items-center justify-center gap-2">
+          <span>✨</span> AI Study Buddy <span class="bg-amber-500/20 text-amber-300 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">New</span>
+        </button>
+      </div>
+
+      <!-- Standard Form -->
+      <form id="standard-form" class="space-y-6">
+        <div>
+          <label for="section-select" class="block text-sm font-semibold text-stone-300 mb-2 tracking-wide">SELECT TOPIC</label>
+          <div class="neon-border flex rounded-lg border border-stone-800 bg-stone-950/45 transition duration-300">
+            <span class="inline-flex items-center px-3 text-stone-600 text-lg">🏷️</span>
+            <select id="section-select" class="block w-full p-3 bg-transparent text-stone-300 focus:outline-none text-base cursor-pointer" required>
+              <option value="" disabled selected class="bg-stone-950 text-stone-400">Select a section</option>
+            </select>
+          </div>
         </div>
-        <div class="mb-8">
-          <label for="difficulty-select" class="block text-lg font-semibold mb-2">Select Difficulty Level</label>
-          <select id="difficulty-select" class="block w-full p-2 border rounded-lg" required>
-            <option value="" disabled selected>Select difficulty level</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
+
+        <div>
+          <label for="difficulty-select" class="block text-sm font-semibold text-stone-300 mb-2 tracking-wide">DIFFICULTY LEVEL</label>
+          <div class="neon-border flex rounded-lg border border-stone-800 bg-stone-950/45 transition duration-300">
+            <span class="inline-flex items-center px-3 text-stone-600 text-lg">⚡</span>
+            <select id="difficulty-select" class="block w-full p-3 bg-transparent text-stone-300 focus:outline-none text-base cursor-pointer" required>
+              <option value="" disabled selected class="bg-stone-950 text-stone-400">Select difficulty</option>
+              <option value="easy" class="bg-stone-950 text-stone-100">Easy</option>
+              <option value="medium" class="bg-stone-950 text-stone-100">Medium</option>
+              <option value="hard" class="bg-stone-950 text-stone-100">Hard</option>
+            </select>
+          </div>
         </div>
-        <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">Start Quiz</button>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold p-4 rounded-lg shadow-lg hover:from-amber-500 hover:to-orange-500 hover:shadow-amber-500/10 active:scale-[0.99] transition duration-300 flex items-center justify-center gap-2 group">
+          Start Quiz <span class="group-hover:translate-x-1 transition-transform">➡️</span>
+        </button>
       </form>
+
+      <!-- AI Form (Hidden initially) -->
+      <form id="ai-form" class="hidden space-y-6">
+        <div>
+          <label for="ai-notes" class="block text-sm font-semibold text-stone-300 mb-2 tracking-wide flex justify-between">
+            <span>PASTE STUDY NOTES / DOCUMENT</span>
+            <span id="char-count" class="text-xs font-normal text-stone-500">0 characters (min 50)</span>
+          </label>
+          <textarea id="ai-notes" rows="6" class="neon-border block w-full p-4 border border-stone-800 bg-stone-950/45 text-stone-100 rounded-lg placeholder-stone-600 focus:outline-none text-sm resize-none" placeholder="Paste copy-pasted book paragraphs, documentation pages, code blocks, or article summaries here (minimum 50 characters)..." required></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="ai-difficulty-select" class="block text-sm font-semibold text-stone-300 mb-2 tracking-wide">TARGET DIFFICULTY</label>
+            <div class="neon-border flex rounded-lg border border-stone-800 bg-stone-950/45 transition duration-300">
+              <span class="inline-flex items-center px-3 text-stone-600 text-lg">⚡</span>
+              <select id="ai-difficulty-select" class="block w-full p-3 bg-transparent text-stone-300 focus:outline-none text-base cursor-pointer" required>
+                <option value="easy" class="bg-stone-950 text-stone-100">Easy</option>
+                <option value="medium" selected class="bg-stone-950 text-stone-100">Medium</option>
+                <option value="hard" class="bg-stone-950 text-stone-100">Hard</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="ai-num-questions" class="block text-sm font-semibold text-stone-300 mb-2 tracking-wide">NUMBER OF QUESTIONS</label>
+            <div class="neon-border flex rounded-lg border border-stone-800 bg-stone-950/45 transition duration-300">
+              <span class="inline-flex items-center px-3 text-stone-600 text-lg">📋</span>
+              <select id="ai-num-questions" class="block w-full p-3 bg-transparent text-stone-300 focus:outline-none text-base cursor-pointer" required>
+                <option value="3" class="bg-stone-950 text-stone-100">3 Questions</option>
+                <option value="5" selected class="bg-stone-950 text-stone-100">5 Questions</option>
+                <option value="7" class="bg-stone-950 text-stone-100">7 Questions</option>
+                <option value="10" class="bg-stone-950 text-stone-100">10 Questions</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-600 text-white font-semibold p-4 rounded-lg shadow-lg hover:from-amber-400 hover:via-orange-400 hover:to-yellow-500 hover:shadow-orange-500/10 active:scale-[0.99] transition duration-300 flex items-center justify-center gap-2 group">
+          ✨ Generate Quiz with AI <span class="group-hover:scale-110 transition-transform">🔮</span>
+        </button>
+      </form>
+
+      <!-- Loading / Progress State -->
+      <div id="ai-loading" class="hidden flex-col items-center justify-center py-12 space-y-4">
+        <div class="flex items-center gap-1.5 text-2xl">
+          <span class="dot-pulse w-3 h-3 rounded-full bg-amber-400"></span>
+          <span class="dot-pulse w-3 h-3 rounded-full bg-orange-400"></span>
+          <span class="dot-pulse w-3 h-3 rounded-full bg-yellow-400"></span>
+        </div>
+        <p id="loading-status" class="text-amber-300 font-medium tracking-wide text-sm animate-pulse">Generating your custom quiz...</p>
+        <p class="text-xs text-stone-500 text-center max-w-xs">This takes a few seconds as Gemini structures the concepts and correct choices.</p>
+      </div>
+
+      <!-- Error message container -->
+      <div id="error-container" class="hidden mt-4 p-4 rounded-lg border border-red-500/30 bg-red-950/20 text-red-400 text-sm flex items-start gap-2.5">
+        <span>⚠️</span>
+        <div class="flex-1">
+          <p id="error-message" class="font-medium"></p>
+          <p id="error-help" class="text-xs text-stone-400 mt-1"></p>
+        </div>
+      </div>
+
     </div>
   </div>
-  <script>
-    async function loadSections() {
-      const response = await fetch('/api/quiz/sections');
-      const sections = await response.json();
-      const sectionSelect = document.getElementById('section-select');
-      sections.forEach(section => {
-        const option = document.createElement('option');
-        option.value = section.id;
-        option.textContent = section.name;
-        sectionSelect.appendChild(option);
-      });
 
-      const savedSectionId = window.localStorage.getItem('sectionId');
-      if (savedSectionId) {
-        sectionSelect.value = savedSectionId;
+  <script>
+    // Elements
+    const tabStandard = document.getElementById('tab-standard');
+    const tabAI = document.getElementById('tab-ai');
+    const standardForm = document.getElementById('standard-form');
+    const aiForm = document.getElementById('ai-form');
+    const userNameInput = document.getElementById('user-name');
+    const aiNotes = document.getElementById('ai-notes');
+    const charCount = document.getElementById('char-count');
+    const aiLoading = document.getElementById('ai-loading');
+    const loadingStatus = document.getElementById('loading-status');
+    const errorContainer = document.getElementById('error-container');
+    const errorMessage = document.getElementById('error-message');
+    const errorHelp = document.getElementById('error-help');
+
+    // Status Texts to rotate
+    const statusPhrases = [
+      "Connecting to Gemini API...",
+      "Analyzing study notes...",
+      "Extracting key concepts...",
+      "Drafting multiple-choice questions...",
+      "Structuring correct options...",
+      "Generating technical explanations...",
+      "Saving database models..."
+    ];
+    let statusInterval;
+
+    // Tabs logic
+    tabStandard.addEventListener('click', () => {
+      tabStandard.classList.add('tab-active', 'border-amber-500');
+      tabAI.classList.remove('tab-active', 'border-amber-500');
+      standardForm.classList.remove('hidden');
+      aiForm.classList.add('hidden');
+      errorContainer.classList.add('hidden');
+    });
+
+    tabAI.addEventListener('click', () => {
+      tabAI.classList.add('tab-active', 'border-amber-500');
+      tabStandard.classList.remove('tab-active', 'border-amber-500');
+      aiForm.classList.remove('hidden');
+      standardForm.classList.add('hidden');
+      errorContainer.classList.add('hidden');
+    });
+
+    // Char counter
+    aiNotes.addEventListener('input', () => {
+      const len = aiNotes.value.length;
+      charCount.textContent = `${len} characters (min 50)`;
+      if (len >= 50) {
+        charCount.classList.remove('text-stone-500');
+        charCount.classList.add('text-amber-400');
+      } else {
+        charCount.classList.remove('text-amber-400');
+        charCount.classList.add('text-stone-500');
+      }
+    });
+
+    // Populate drop down with sections
+    async function loadSections() {
+      try {
+        const response = await fetch('/api/quiz/sections');
+        const sections = await response.json();
+        const sectionSelect = document.getElementById('section-select');
+        sections.forEach(section => {
+          const option = document.createElement('option');
+          option.value = section.id;
+          option.textContent = section.name;
+          option.className = "bg-stone-900 text-stone-100";
+          sectionSelect.appendChild(option);
+        });
+
+        const savedSectionId = window.localStorage.getItem('sectionId');
+        if (savedSectionId) {
+          sectionSelect.value = savedSectionId;
+        }
+      } catch (err) {
+        console.error("Error loading sections:", err);
       }
     }
 
-    document.getElementById('welcome-form').addEventListener('submit', function(event) {
+    // Submit standard quiz setup
+    standardForm.addEventListener('submit', function(event) {
       event.preventDefault();
-      const userName = document.getElementById('user-name').value;
+      const userName = userNameInput.value.trim();
       const sectionId = document.getElementById('section-select').value;
       const difficulty = document.getElementById('difficulty-select').value;
+
+      if (!userName) return;
+
       window.localStorage.setItem('userName', userName);
       window.localStorage.setItem('sectionId', sectionId);
       window.localStorage.setItem('difficulty', difficulty);
       window.location.href = '/quiz';
     });
 
+    // Submit AI quiz generator
+    aiForm.addEventListener('submit', async function(event) {
+      event.preventDefault();
+      errorContainer.classList.add('hidden');
+      const userName = userNameInput.value.trim();
+      const text = aiNotes.value;
+      const difficulty = document.getElementById('ai-difficulty-select').value;
+      const numQuestions = document.getElementById('ai-num-questions').value;
+
+      if (!userName) {
+        userNameInput.focus();
+        userNameInput.reportValidity();
+        return;
+      }
+
+      if (text.trim().length < 50) {
+        alert("Please enter at least 50 characters of study notes.");
+        return;
+      }
+
+      // Show loading state, hide form buttons
+      aiForm.classList.add('hidden');
+      aiLoading.classList.remove('hidden');
+      userNameInput.disabled = true;
+
+      // Start status rotating text
+      let phraseIdx = 0;
+      loadingStatus.textContent = statusPhrases[0];
+      statusInterval = setInterval(() => {
+        phraseIdx = (phraseIdx + 1) % statusPhrases.length;
+        loadingStatus.textContent = statusPhrases[phraseIdx];
+      }, 1800);
+
+      try {
+        const response = await fetch('/api/quiz/generate-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, difficulty, userName, numQuestions })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw { 
+            message: data.error || 'Server error occurred during generation', 
+            isApiKeyError: data.error && data.error.includes('API key') 
+          };
+        }
+
+        // Save metadata and redirect
+        window.localStorage.setItem('userName', userName);
+        window.localStorage.setItem('sectionId', data.sectionId);
+        window.localStorage.setItem('difficulty', difficulty);
+        
+        clearInterval(statusInterval);
+        window.location.href = '/quiz';
+
+      } catch (err) {
+        clearInterval(statusInterval);
+        aiLoading.classList.add('hidden');
+        aiForm.classList.remove('hidden');
+        userNameInput.disabled = false;
+
+        errorContainer.classList.remove('hidden');
+        errorMessage.textContent = err.message || 'An unexpected error occurred.';
+        
+        if (err.isApiKeyError) {
+          errorHelp.innerHTML = 'To fix this, create a <strong>.env</strong> file in your project root containing: <br><code class="block bg-stone-950 p-2 rounded text-amber-300 mt-1 select-all font-mono">GEMINI_API_KEY=your_api_key_here</code><br>You can acquire a free developer key from <a href="https://ai.google.dev/aistudio" target="_blank" class="underline text-amber-400 hover:text-amber-300">Google AI Studio</a>.';
+        } else {
+          errorHelp.textContent = 'Check your internet connection or try shortening/modifying the input text.';
+        }
+      }
+    });
+
+    // Init
     document.addEventListener('DOMContentLoaded', () => {
+      // Default Active Tab styling
+      tabStandard.classList.add('tab-active', 'border-amber-500');
+
       const savedUserName = window.localStorage.getItem('userName');
       if (savedUserName) {
-        document.getElementById('user-name').value = savedUserName;
+        userNameInput.value = savedUserName;
       }
 
       const savedDifficulty = window.localStorage.getItem('difficulty');

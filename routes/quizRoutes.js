@@ -1,18 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql2');
-require('dotenv').config();
-
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
+const db = require('../db');
+const { GoogleGenAI } = require('@google/genai');
 
 router.get('/sections', async (req, res) => {
   try {
-    const [results] = await db.promise().query('SELECT * FROM sections');
+    const results = await db.getSections();
     res.json(results);
   } catch (err) {
     console.error('Error fetching sections:', err);
@@ -23,11 +16,11 @@ router.get('/sections', async (req, res) => {
 router.get('/sections/:sectionId', async (req, res) => {
   const { sectionId } = req.params;
   try {
-    const [results] = await db.promise().query('SELECT * FROM sections WHERE id = ?', [sectionId]);
-    if (results.length === 0) {
+    const section = await db.getSectionById(sectionId);
+    if (!section) {
       return res.status(404).json({ error: 'Section not found' });
     }
-    res.json(results[0]);
+    res.json(section);
   } catch (err) {
     console.error('Error fetching section:', err);
     res.status(500).json({ error: 'Database error' });
@@ -37,7 +30,7 @@ router.get('/sections/:sectionId', async (req, res) => {
 router.get('/questions/:sectionId/:difficulty', async (req, res) => {
   const { sectionId, difficulty } = req.params;
   try {
-    const [results] = await db.promise().query('SELECT * FROM questions WHERE section_id = ? AND difficulty = ?', [sectionId, difficulty]);
+    const results = await db.getQuestions(sectionId, difficulty);
     res.json(results);
   } catch (err) {
     console.error('Error fetching questions:', err);
@@ -49,8 +42,12 @@ router.post('/submit', async (req, res) => {
   const answers = req.body;
   const questionIds = Object.keys(answers).map(key => key.split('-')[1]);
 
+  if (questionIds.length === 0) {
+    return res.json({ score: 0, total: 0 });
+  }
+
   try {
-    const [selectedQuestions] = await db.promise().query('SELECT * FROM questions WHERE id IN (?)', [questionIds]);
+    const selectedQuestions = await db.getQuestionsByIds(questionIds);
 
     let score = 0;
     selectedQuestions.forEach(question => {
@@ -72,11 +69,90 @@ router.post('/save-result', async (req, res) => {
   const { userName, sectionId, result } = req.body;
 
   try {
-    const [resultInsert] = await db.promise().query('INSERT INTO results (user_name, section_id, score, total) VALUES (?, ?, ?, ?)', [userName, sectionId, result.score, result.total]);
+    await db.saveResult(userName, sectionId, result.score, result.total);
     res.status(200).json({ message: 'Results saved successfully' });
   } catch (err) {
     console.error('Error saving results:', err);
     res.status(500).json({ error: 'Database error' });
+  }
+});
+
+router.post('/generate-ai', async (req, res) => {
+  const { text, difficulty, userName, numQuestions } = req.body;
+  if (!text || text.trim().length < 50) {
+    return res.status(400).json({ error: 'Please enter at least 50 characters of notes.' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(400).json({
+      error: 'Gemini API key is not configured. Please set the GEMINI_API_KEY environment variable in your .env file.'
+    });
+  }
+
+  const count = Math.max(3, Math.min(10, parseInt(numQuestions, 10) || 5));
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const prompt = `You are a professional quiz generator. Generate a multiple choice quiz based ONLY on the provided text.
+Generate exactly ${count} questions of "${difficulty || 'medium'}" difficulty level.
+Each question must have exactly 4 options and a 1-indexed correct_option number.
+Provide a clear, educational explanation (maximum 2 sentences) for the correct answer.
+
+Here is the source text to generate the quiz from:
+${text}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            questions: {
+              type: 'ARRAY',
+              items: {
+                type: 'OBJECT',
+                properties: {
+                  question: { type: 'STRING' },
+                  option1: { type: 'STRING' },
+                  option2: { type: 'STRING' },
+                  option3: { type: 'STRING' },
+                  option4: { type: 'STRING' },
+                  correct_option: { type: 'INTEGER' },
+                  explanation: { type: 'STRING' }
+                },
+                required: ['question', 'option1', 'option2', 'option3', 'option4', 'correct_option', 'explanation']
+              }
+            }
+          },
+          required: ['questions']
+        }
+      }
+    });
+
+    const quizData = JSON.parse(response.text);
+    if (!quizData.questions || quizData.questions.length === 0) {
+      throw new Error('No questions generated by AI.');
+    }
+
+    // Set difficulty on each generated question
+    quizData.questions.forEach(q => {
+      q.difficulty = difficulty || 'medium';
+    });
+
+    // Create a section title from the beginning of the text
+    const cleanName = text.trim().substring(0, 30).replace(/\n/g, ' ') + '...';
+    const sectionTitle = `AI Quiz: ${cleanName}`;
+
+    const sectionId = await db.createAIQuiz(sectionTitle, quizData.questions);
+
+    res.json({ sectionId });
+  } catch (err) {
+    console.error('Error generating AI quiz:', err);
+    res.status(500).json({ error: 'Failed to generate quiz. Details: ' + err.message });
   }
 });
 

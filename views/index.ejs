@@ -1,25 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz App</title>
+  <title>Quiz Session - Quizzard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+    }
+    .glass-card {
+      background: rgba(28, 25, 23, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    /* Style for checked options */
+    .option-card input[type="radio"]:checked + .option-label {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+      border-color: rgba(217, 119, 6, 0.6);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+      color: #fef3c7;
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-      <h1 class="text-4xl font-bold text-center mb-8 text-blue-700">Quizzard</h1>
-      <div class="mb-8 flex justify-between items-center border-b pb-4">
-        <p class="text-lg font-semibold text-gray-700">Welcome, <span id="user-name-display" class="text-blue-600 font-bold"></span></p>
-        <p class="text-lg font-semibold text-gray-700">Topic: <span id="section-name-display" class="text-blue-600 font-bold"></span></p>
+<body class="bg-gradient-to-br from-[#0a0a0a] via-[#171513] to-[#0d0c0a] text-stone-100 min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
+  <!-- Decorative background glow blobs -->
+  <div class="absolute -top-40 -left-40 w-96 h-96 bg-amber-600/10 rounded-full blur-3xl -z-10"></div>
+  <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl -z-10"></div>
+
+  <div class="max-w-3xl w-full">
+    <!-- Header info -->
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 px-2">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">📖</span>
+        <div>
+          <h2 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-200 to-yellow-400">Quizzard Session</h2>
+          <p class="text-xs text-stone-400">Welcome back, <span id="user-name-display" class="text-amber-300 font-semibold"></span></p>
+        </div>
       </div>
-      <form id="quiz-form" class="hidden">
+      <div class="bg-stone-900/60 border border-stone-850 rounded-lg px-4 py-2 text-right">
+        <p class="text-xs text-stone-500 uppercase tracking-wider">Active Topic</p>
+        <p id="section-name-display" class="text-sm font-semibold text-amber-300"></p>
+      </div>
+    </div>
+
+    <!-- Main quiz card -->
+    <div class="glass-card rounded-2xl shadow-2xl p-6 sm:p-8">
+      
+      <!-- Loading state -->
+      <div id="quiz-loading" class="flex flex-col items-center justify-center py-20 space-y-4">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-400"></div>
+        <p class="text-stone-400 text-sm">Loading quiz questions...</p>
+      </div>
+
+      <!-- Quiz form -->
+      <form id="quiz-form" class="hidden space-y-8">
         <div id="quiz-container" class="space-y-8"></div>
-        <button type="submit" class="mt-8 w-full bg-blue-600 text-white p-4 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">Submit</button>
+        
+        <div class="pt-4 border-t border-stone-850 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <p class="text-xs text-stone-500">Ensure all questions are answered before submitting.</p>
+          <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-semibold px-8 py-3 rounded-lg shadow-lg active:scale-[0.98] transition duration-300">
+            Submit Answers
+          </button>
+        </div>
       </form>
+
     </div>
   </div>
+
   <script>
     async function loadSectionName(sectionId) {
       const response = await fetch(`/api/quiz/sections/${sectionId}`);
@@ -30,23 +82,62 @@
     async function loadQuestions(sectionId, difficulty) {
       const response = await fetch(`/api/quiz/questions/${sectionId}/${difficulty}`);
       const questions = await response.json();
+      
+      const loadingElem = document.getElementById('quiz-loading');
+      const quizForm = document.getElementById('quiz-form');
       const quizContainer = document.getElementById('quiz-container');
+      
       quizContainer.innerHTML = '';
+      
       questions.forEach((question, index) => {
         const questionElem = document.createElement('div');
-        questionElem.classList.add('p-6', 'border', 'rounded-lg', 'shadow-sm', 'bg-gray-50');
+        questionElem.classList.add('p-6', 'border', 'border-stone-800', 'rounded-xl', 'bg-stone-900/30', 'space-y-4');
+        
         questionElem.innerHTML = `
-          <p class="text-lg font-semibold mb-4">${index + 1}. ${question.question}</p>
-          <div class="ml-4 space-y-2">
-            <label class="block"><input type="radio" name="question-${question.id}" value="1" class="mr-2"> ${question.option1}</label>
-            <label class="block"><input type="radio" name="question-${question.id}" value="2" class="mr-2"> ${question.option2}</label>
-            <label class="block"><input type="radio" name="question-${question.id}" value="3" class="mr-2"> ${question.option3}</label>
-            <label class="block"><input type="radio" name="question-${question.id}" value="4" class="mr-2"> ${question.option4}</label>
+          <div class="flex items-start gap-3">
+            <span class="bg-amber-500/20 text-amber-300 font-bold text-xs rounded-full px-2.5 py-1 mt-0.5">${index + 1}</span>
+            <p class="text-lg font-medium text-stone-100">${question.question}</p>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 ml-8">
+            <!-- Option 1 -->
+            <label class="option-card relative cursor-pointer block">
+              <input type="radio" name="question-${question.id}" value="1" class="sr-only" required>
+              <div class="option-label p-3.5 border border-stone-800 bg-stone-950/40 hover:border-stone-700 rounded-lg text-sm text-stone-450 hover:text-stone-200 transition duration-200">
+                ${question.option1}
+              </div>
+            </label>
+
+            <!-- Option 2 -->
+            <label class="option-card relative cursor-pointer block">
+              <input type="radio" name="question-${question.id}" value="2" class="sr-only">
+              <div class="option-label p-3.5 border border-stone-800 bg-stone-950/40 hover:border-stone-700 rounded-lg text-sm text-stone-450 hover:text-stone-200 transition duration-200">
+                ${question.option2}
+              </div>
+            </label>
+
+            <!-- Option 3 -->
+            <label class="option-card relative cursor-pointer block">
+              <input type="radio" name="question-${question.id}" value="3" class="sr-only">
+              <div class="option-label p-3.5 border border-stone-800 bg-stone-950/40 hover:border-stone-700 rounded-lg text-sm text-stone-450 hover:text-stone-200 transition duration-200">
+                ${question.option3}
+              </div>
+            </label>
+
+            <!-- Option 4 -->
+            <label class="option-card relative cursor-pointer block">
+              <input type="radio" name="question-${question.id}" value="4" class="sr-only">
+              <div class="option-label p-3.5 border border-stone-800 bg-stone-950/40 hover:border-stone-700 rounded-lg text-sm text-stone-450 hover:text-stone-200 transition duration-200">
+                ${question.option4}
+              </div>
+            </label>
           </div>
         `;
         quizContainer.appendChild(questionElem);
       });
-      document.getElementById('quiz-form').classList.remove('hidden');
+
+      loadingElem.classList.add('hidden');
+      quizForm.classList.remove('hidden');
     }
 
     document.getElementById('quiz-form').addEventListener('submit', async function(event) {
@@ -62,30 +153,50 @@
         return;
       }
 
-      const response = await fetch('/api/quiz/submit', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const result = await response.json();
-      const userName = window.localStorage.getItem('userName');
-      const sectionId = window.localStorage.getItem('sectionId');
-      await fetch('/api/quiz/save-result', {
-        method: 'POST',
-        body: JSON.stringify({ userName, sectionId, result }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      window.location.href = `/result?score=${result.score}&total=${result.total}`;
+      // Show loader on submit button
+      const submitBtn = this.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="animate-pulse">Submitting...</span>`;
+
+      try {
+        const response = await fetch('/api/quiz/submit', {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        const userName = window.localStorage.getItem('userName');
+        const sectionId = window.localStorage.getItem('sectionId');
+        
+        await fetch('/api/quiz/save-result', {
+          method: 'POST',
+          body: JSON.stringify({ userName, sectionId, result }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        // Save user answers for explanations review
+        window.localStorage.setItem('userAnswers', JSON.stringify(data));
+        
+        window.location.href = `/result?score=${result.score}&total=${result.total}&sectionId=${sectionId}`;
+      } catch (err) {
+        console.error("Error submitting quiz:", err);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Answers";
+        alert("An error occurred while submitting. Please try again.");
+      }
     });
 
     document.addEventListener('DOMContentLoaded', () => {
       const userName = window.localStorage.getItem('userName');
       const sectionId = window.localStorage.getItem('sectionId');
       const difficulty = window.localStorage.getItem('difficulty');
+      
       if (!userName || !sectionId || !difficulty) {
         window.location.href = '/';
         return;
       }
+      
       document.getElementById('user-name-display').textContent = userName;
       loadSectionName(sectionId);
       loadQuestions(sectionId, difficulty);

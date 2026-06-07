@@ -1,89 +1,111 @@
 # Contributing to Quizzard
 
-Thank you for your interest in contributing to Quizzard! We welcome contributions from everyone. To make the process smooth and easy, please follow these guidelines.
+Thank you for your interest in contributing to Quizzard! We are thrilled to welcome you. This project is specifically designed to be beginner-friendly for full-stack, EJS, and AI integration practice.
+
+This guide will explain the codebase architecture, branching workflows, and details on how to make your first contribution.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Branching & PR Workflow
 
-### 1. Fork & Clone
-First, clone the repository to your local machine:
-```bash
-git clone https://github.com/sandipanxd/quizzard.git
-cd quizzard
+To keep the repository clean and structured, please follow this flow:
+1. **Target Branch**: The `development` branch is the main active branch for contributions.
+2. **Branching Out**: Create your branch off of `development`:
+   ```bash
+   git checkout -b feature/my-feature-name development
+   # or
+   git checkout -b bugfix/my-bugfix-name development
+   ```
+3. **Running Checks**: Before committing, ensure the application starts and that all tests pass locally:
+   ```bash
+   npm test
+   ```
+4. **Submit PR**: Push your branch to your fork and submit a PR targeting the `development` branch. Fill out the PR template checklist completely.
+
+---
+
+## 📂 Codebase Architecture
+
+Here is the directory structure:
+```text
+quizzard/
+├── routes/
+│   └── quizRoutes.js       # Express REST endpoints
+├── scripts/
+│   └── dbReset.js          # Reset script for the database file
+├── tests/
+│   └── routes/
+│       └── quizRoutes.test.js  # Jest tests
+├── views/
+│   ├── welcome.ejs         # Onboarding EJS page
+│   ├── index.ejs           # Quiz execution EJS page
+│   └── result.ejs          # Score presentation EJS page
+├── db.js                   # Zero-config local JSON database driver
+└── db.json                 # Auto-generated local database file (do not commit)
 ```
 
-### 2. Set Up the Environment
-Create a `.env` file in the root of the project:
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password  # Use your local MySQL password
-DB_NAME=quiz_app
-PORT=3000
+---
+
+## 🧠 How to Add a New Standard Quiz Category (Step-by-Step)
+
+Adding standard/pre-seeded quiz categories involves modifying the default database state inside [db.js](file:///Users/sandydev/quizzard/db.js).
+
+### Step 1: Add a New Section in `db.js`
+Open `db.js` and locate the `defaultData` object. Add a new section to the `sections` array with a unique `id` and a `name`:
+```javascript
+const defaultData = {
+  sections: [
+    { id: 1, name: 'General Knowledge' },
+    { id: 2, name: 'Science' },
+    { id: 3, name: 'Web Accessibility' } // Added new section
+  ],
+  ...
 ```
 
-### 3. Install Dependencies & Fix Permissions
-Install the project dependencies and ensure the test binaries are executable:
-```bash
-npm install
-chmod +x node_modules/.bin/*
+### Step 2: Add Questions linked to the Section
+Add your questions to the `questions` array in the same `defaultData` object. Match the `section_id` with the new section's ID:
+```javascript
+  questions: [
+    ...
+    // Web Accessibility questions (section_id: 3)
+    {
+      id: 11,
+      section_id: 3,
+      question: 'What does WCAG stand for?',
+      option1: 'Web Content Accessibility Guidelines',
+      option2: 'Web Core Application Group',
+      option3: 'Widget Common Access Group',
+      option4: 'Wide Compatibility Access Guild',
+      correct_option: 1,
+      difficulty: 'easy',
+      explanation: 'WCAG stands for Web Content Accessibility Guidelines, which provides recommendations for making Web content more accessible.'
+    }
+  ]
 ```
 
-### 4. Setup and Seed the Database
-Make sure MySQL is running on your machine. Then run the automated database setup and seeding script:
+### Step 3: Run the database setup script to seed it
+To re-initialize your local database file (`db.json`) with the new seed categories and questions, run:
 ```bash
 npm run db:setup
 ```
-This script will automatically:
-- Create the `quiz_app` database if it doesn't exist.
-- Build the `sections`, `questions`, and `results` tables with the correct schema.
-- Insert initial mock/seed data.
+Open [http://localhost:3000](http://localhost:3000) to verify your new category is visible in the dropdown selection box!
 
 ---
 
-## 💻 Development Workflow
+## 🧪 Writing & Running Tests
 
-### Start the Development Server
-Run the application with `nodemon` for automatic server reloads on file changes:
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+If you add a new endpoint or update route handlers, write corresponding unit tests in [quizRoutes.test.js](file:///Users/sandydev/quizzard/tests/routes/quizRoutes.test.js) using **Jest** and **Supertest**.
 
-### Running Tests
-Before committing changes, make sure all tests pass:
+Run the test suite to verify code correctness:
 ```bash
 npm test
 ```
 
 ---
 
-## 🛠️ Contribution Rules & Best Practices
-
-1. **Branching Model**: Create a new descriptive branch for your changes:
-   ```bash
-   git checkout -b feature/your-feature-name
-   # or
-   git checkout -b bugfix/your-bugfix-name
-   ```
-2. **Code Style**:
-   - Write clean, commented JavaScript code.
-   - Do not commit `.env` or `node_modules/` files (verify with `.gitignore`).
-3. **Database Changes**:
-   - If you modify the database schema, make sure to update the setup script in `scripts/dbSetup.js` and document the changes.
-4. **Writing Tests**:
-   - If you introduce a new route or helper, add corresponding tests in the `tests/` directory using Jest and Supertest.
-
----
-
-## 📬 Submitting a Pull Request
-
-1. Push your branch to your fork:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-2. Open a Pull Request (PR) against the `main` or `development` branch of the upstream repository.
-3. Provide a clear description of the problem solved or the feature added in the PR description.
-
-Happy hacking! 🚀
+## 🛠️ Pull Request Checklist
+Before opening a PR, double check:
+- [ ] No local configuration files (like `.env` or `db.json`) are committed (check `.gitignore`).
+- [ ] The code runs without warnings in the browser console.
+- [ ] No hardcoded personal API keys or credentials exist in the codebase.
+- [ ] All unit tests pass (`npm test`).

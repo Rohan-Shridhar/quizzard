@@ -1,19 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz Result</title>
+  <title>Quiz Results - Quizzard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+    }
+    .glass-card {
+      background: rgba(28, 25, 23, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .score-circle {
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.15) 100%);
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-      <h1 class="text-3xl font-bold text-center mb-4 text-blue-700">Quiz Result</h1>
-      <p class="text-xl text-center mb-8">You scored <span class="font-bold text-blue-700"><%= score %></span> out of <span class="font-bold text-blue-700"><%= total %></span></p>
-      <p class="text-lg text-center mb-8"><%= message %></p>
-      <a href="/" class="block w-full bg-blue-600 text-white text-center p-4 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">Take Quiz Again</a>
+<body class="bg-gradient-to-br from-[#0a0a0a] via-[#171513] to-[#0d0c0a] text-stone-100 min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
+  <!-- Decorative background glow blobs -->
+  <div class="absolute -top-40 -left-40 w-96 h-96 bg-amber-600/10 rounded-full blur-3xl -z-10"></div>
+  <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl -z-10"></div>
+
+  <div class="max-w-2xl w-full">
+    <!-- Main Card -->
+    <div class="glass-card rounded-2xl shadow-2xl p-6 sm:p-8 text-center space-y-6 relative overflow-hidden">
+      
+      <!-- Congratulations Wizard Header -->
+      <div class="text-6xl animate-bounce">🏆</div>
+      <h1 class="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-200 to-yellow-400">
+        Quiz Completed!
+      </h1>
+      
+      <!-- Score Circle Indicator -->
+      <div class="score-circle w-32 h-32 rounded-full border-2 border-amber-550/30 flex flex-col items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
+        <p class="text-4xl font-extrabold text-white leading-tight"><%= score %></p>
+        <p class="text-xs text-stone-400 font-semibold tracking-wider border-t border-stone-850 pt-1 mt-1 px-4">OUT OF <%= total %></p>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xl font-medium text-stone-200"><%= message %></p>
+        <p id="percentage-label" class="text-sm text-amber-400 font-semibold"></p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        <button id="btn-review" class="bg-stone-900/80 border border-stone-800 text-stone-300 hover:text-white font-semibold p-3.5 rounded-lg transition duration-300 hover:border-amber-500/50 active:scale-[0.99] flex items-center justify-center gap-2">
+          🔍 Review Explanations
+        </button>
+        <a href="/" class="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-semibold p-3.5 rounded-lg shadow-lg active:scale-[0.99] transition duration-300 flex items-center justify-center gap-2">
+          Take Another Quiz ➡️
+        </a>
+      </div>
+
+      <!-- Review Section (Hidden initially) -->
+      <div id="review-section" class="hidden text-left pt-6 border-t border-stone-850 space-y-6 max-h-[400px] overflow-y-auto pr-2">
+        <h3 class="text-lg font-bold text-stone-200 mb-4 flex items-center gap-2">
+          <span>🧠</span> Concept Review
+        </h3>
+        <div id="review-container" class="space-y-4">
+          <div class="animate-pulse flex space-x-4">
+            <div class="flex-1 space-y-4 py-1">
+              <div class="h-4 bg-stone-900 rounded w-3/4"></div>
+              <div class="space-y-2">
+                <div class="h-4 bg-stone-900 rounded"></div>
+                <div class="h-4 bg-stone-900 rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Calculate percentage
+      const score = parseInt("<%= score %>", 10);
+      const total = parseInt("<%= total %>", 10);
+      const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+      document.getElementById('percentage-label').textContent = `${percent}% Accuracy Rate`;
+
+      // Review explanations logic
+      const btnReview = document.getElementById('btn-review');
+      const reviewSection = document.getElementById('review-section');
+      const reviewContainer = document.getElementById('review-container');
+      
+      let reviewsLoaded = false;
+
+      btnReview.addEventListener('click', async () => {
+        // Toggle view
+        reviewSection.classList.toggle('hidden');
+        
+        // Scroll into view
+        if (!reviewSection.classList.contains('hidden')) {
+          reviewSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        if (reviewsLoaded) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const sectionId = urlParams.get('sectionId');
+        const difficulty = window.localStorage.getItem('difficulty') || 'medium';
+
+        if (!sectionId) {
+          reviewContainer.innerHTML = `<p class="text-xs text-stone-500">Explanations are only available for this active quiz session.</p>`;
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/quiz/questions/${sectionId}/${difficulty}`);
+          const questions = await response.json();
+          const userAnswers = JSON.parse(window.localStorage.getItem('userAnswers') || '{}');
+          
+          reviewContainer.innerHTML = '';
+          
+          questions.forEach((q, idx) => {
+            const selectedOption = parseInt(userAnswers[`question-${q.id}`], 10);
+            const explanationHtml = q.explanation 
+              ? `<div class="mt-3 p-3 bg-amber-950/20 border-l-2 border-amber-500/50 rounded text-xs text-amber-200">
+                   <strong>Explanation:</strong> ${q.explanation}
+                 </div>` 
+              : '';
+
+            const optionStates = [1, 2, 3, 4].map(optNum => {
+              const text = q[`option${optNum}`];
+              const isCorrect = q.correct_option === optNum;
+              const isSelected = selectedOption === optNum;
+              
+              let styleClass = "text-stone-400";
+              let indicator = "•";
+              
+              if (isCorrect) {
+                styleClass = "text-emerald-400 font-medium";
+                indicator = "✅";
+              } else if (isSelected) {
+                styleClass = "text-red-400 font-medium";
+                indicator = "❌";
+              }
+              
+              const selectionSuffix = isSelected ? ' <span class="text-[10px] bg-stone-850 text-stone-550 px-1 py-0.5 rounded ml-1 font-normal">(Your choice)</span>' : '';
+              
+              return `<p class="${styleClass}">${indicator} ${text}${selectionSuffix}</p>`;
+            }).join('');
+
+            const qCard = document.createElement('div');
+            qCard.className = "p-4 rounded-lg bg-stone-900/40 border border-stone-850 space-y-2";
+            qCard.innerHTML = `
+              <p class="text-sm font-semibold text-stone-200">${idx + 1}. ${q.question}</p>
+              <div class="text-xs pl-4 space-y-1">
+                ${optionStates}
+              </div>
+              ${explanationHtml}
+            `;
+            reviewContainer.appendChild(qCard);
+          });
+          reviewsLoaded = true;
+
+        } catch (err) {
+          console.error("Error loading explanations:", err);
+          reviewContainer.innerHTML = `<p class="text-xs text-red-400">Failed to load explanations.</p>`;
+        }
+      });
+    });
+  </script>
 </body>
 </html>

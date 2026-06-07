@@ -2,15 +2,40 @@ const request = require('supertest');
 const express = require('express');
 const bodyParser = require('body-parser');
 const quizRoutes = require('../../routes/quizRoutes');
-const mysql = require('mysql2');
+const db = require('../../db');
 
-jest.mock('mysql2', () => {
-  const mClient = {
-    promise: jest.fn().mockReturnThis(),
-    query: jest.fn()
-  };
+jest.mock('../../db', () => ({
+  getSections: jest.fn(),
+  getSectionById: jest.fn(),
+  getQuestions: jest.fn(),
+  getQuestionsByIds: jest.fn(),
+  saveResult: jest.fn(),
+  createAIQuiz: jest.fn()
+}));
+
+jest.mock('@google/genai', () => {
+  const mGenerateContent = jest.fn().mockResolvedValue({
+    text: JSON.stringify({
+      questions: [
+        {
+          question: 'Mock AI question?',
+          option1: 'A',
+          option2: 'B',
+          option3: 'C',
+          option4: 'D',
+          correct_option: 1,
+          explanation: 'Mock AI explanation.'
+        }
+      ]
+    })
+  });
+
   return {
-    createConnection: jest.fn(() => mClient)
+    GoogleGenAI: jest.fn().mockImplementation(() => ({
+      models: {
+        generateContent: mGenerateContent
+      }
+    }))
   };
 });
 
@@ -19,17 +44,21 @@ app.use(bodyParser.json());
 app.use('/api/quiz', quizRoutes);
 
 describe('Quiz Routes', () => {
-  let db;
+  let originalEnv;
 
   beforeAll(() => {
-    db = mysql.createConnection();
+    originalEnv = { ...process.env };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   test('GET /api/quiz/sections should return sections', async () => {
-    db.query.mockResolvedValueOnce([[
+    db.getSections.mockResolvedValueOnce([
       { id: 1, name: 'Math' },
       { id: 2, name: 'Science' }
-    ]]);
+    ]);
 
     const response = await request(app).get('/api/quiz/sections');
     expect(response.status).toBe(200);
@@ -40,7 +69,7 @@ describe('Quiz Routes', () => {
   });
 
   test('GET /api/quiz/sections/:sectionId should return the section if it exists', async () => {
-    db.query.mockResolvedValueOnce([[{ id: 1, name: 'Math' }]]);
+    db.getSectionById.mockResolvedValueOnce({ id: 1, name: 'Math' });
 
     const response = await request(app).get('/api/quiz/sections/1');
     expect(response.status).toBe(200);
@@ -48,7 +77,7 @@ describe('Quiz Routes', () => {
   });
 
   test('GET /api/quiz/sections/:sectionId should return 404 if it does not exist', async () => {
-    db.query.mockResolvedValueOnce([[]]);
+    db.getSectionById.mockResolvedValueOnce(null);
 
     const response = await request(app).get('/api/quiz/sections/999');
     expect(response.status).toBe(404);
@@ -59,10 +88,10 @@ describe('Quiz Routes', () => {
     const sectionId = 1;
     const difficulty = 'easy';
 
-    db.query.mockResolvedValueOnce([[
+    db.getQuestions.mockResolvedValueOnce([
       { id: 1, question: 'What is 2+2?', option1: '3', option2: '4', option3: '5', option4: '6', correct_option: 2 },
       { id: 2, question: 'What is 3+3?', option1: '5', option2: '6', option3: '7', option4: '8', correct_option: 2 }
-    ]]);
+    ]);
 
     const response = await request(app).get(`/api/quiz/questions/${sectionId}/${difficulty}`);
     expect(response.status).toBe(200);
@@ -78,10 +107,10 @@ describe('Quiz Routes', () => {
       'question-2': '3'
     };
 
-    db.query.mockResolvedValueOnce([[
+    db.getQuestionsByIds.mockResolvedValueOnce([
       { id: 1, correct_option: 2 },
       { id: 2, correct_option: 3 }
-    ]]);
+    ]);
 
     const response = await request(app)
       .post('/api/quiz/submit')
@@ -98,7 +127,7 @@ describe('Quiz Routes', () => {
       result: { score: 3, total: 5 }
     };
 
-    db.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    db.saveResult.mockResolvedValueOnce({ id: 1, user_name: 'Test User', section_id: 1, score: 3, total: 5 });
 
     const response = await request(app)
       .post('/api/quiz/save-result')
@@ -106,5 +135,59 @@ describe('Quiz Routes', () => {
       .set('Accept', 'application/json');
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ message: 'Results saved successfully' });
+  });
+
+  test('POST /api/quiz/generate-ai should generate questions and save them', async () => {
+    process.env.GEMINI_API_KEY = 'mock_key';
+    db.createAIQuiz.mockResolvedValueOnce(99);
+
+    const postData = {
+      text: 'This is a long piece of mock notes that has more than fifty characters to pass validation correctly.',
+      difficulty: 'medium',
+      userName: 'Test User',
+      numQuestions: 5
+    };
+
+    const response = await request(app)
+      .post('/api/quiz/generate-ai')
+      .send(postData)
+      .set('Accept', 'application/json');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ sectionId: 99 });
+  });
+
+  test('POST /api/quiz/generate-ai should return error if text is too short', async () => {
+    const postData = {
+      text: 'too short',
+      difficulty: 'medium',
+      userName: 'Test User'
+    };
+
+    const response = await request(app)
+      .post('/api/quiz/generate-ai')
+      .send(postData)
+      .set('Accept', 'application/json');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Please enter at least 50 characters of notes.' });
+  });
+
+  test('POST /api/quiz/generate-ai should return error if API key is not configured', async () => {
+    delete process.env.GEMINI_API_KEY;
+
+    const postData = {
+      text: 'This is a long piece of mock notes that has more than fifty characters to pass validation correctly.',
+      difficulty: 'medium',
+      userName: 'Test User'
+    };
+
+    const response = await request(app)
+      .post('/api/quiz/generate-ai')
+      .send(postData)
+      .set('Accept', 'application/json');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain('Gemini API key is not configured');
   });
 });
