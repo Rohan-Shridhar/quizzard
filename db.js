@@ -6,7 +6,8 @@ const DB_FILE = path.join(__dirname, 'db.json');
 const defaultData = {
   sections: [
     { id: 1, name: 'General Knowledge' },
-    { id: 2, name: 'Science' }
+    { id: 2, name: 'Science' },
+    { id: 3, name: 'Python Basics' }
   ],
   questions: [
     { id: 1, section_id: 1, question: 'What is the capital of France?', option1: 'London', option2: 'Berlin', option3: 'Paris', option4: 'Rome', correct_option: 3, difficulty: 'easy' },
@@ -18,7 +19,68 @@ const defaultData = {
     { id: 7, section_id: 2, question: 'What gas do plants absorb during photosynthesis?', option1: 'Oxygen', option2: 'Nitrogen', option3: 'Carbon Dioxide', option4: 'Hydrogen', correct_option: 3, difficulty: 'easy' },
     { id: 8, section_id: 2, question: 'What is the power house of the cell?', option1: 'Nucleus', option2: 'Mitochondria', option3: 'Ribosome', option4: 'Golgi apparatus', correct_option: 2, difficulty: 'medium' },
     { id: 9, section_id: 2, question: 'Which element has the atomic number 1?', option1: 'Helium', option2: 'Oxygen', option3: 'Hydrogen', option4: 'Carbon', correct_option: 3, difficulty: 'medium' },
-    { id: 10, section_id: 2, question: 'What is the only metal that is liquid at room temperature?', option1: 'Mercury', option2: 'Lead', option3: 'Iron', option4: 'Copper', correct_option: 1, difficulty: 'hard' }
+    { id: 10, section_id: 2, question: 'What is the only metal that is liquid at room temperature?', option1: 'Mercury', option2: 'Lead', option3: 'Iron', option4: 'Copper', correct_option: 1, difficulty: 'hard' },
+    {
+      id: 11,
+      section_id: 3,
+      question: 'Which keyword is used to define a function in Python?',
+      option1: 'func',
+      option2: 'define',
+      option3: 'def',
+      option4: 'function',
+      correct_option: 3,
+      difficulty: 'easy',
+      explanation: 'The def keyword is used to define functions in Python.'
+    },
+    {
+      id: 12,
+      section_id: 3,
+      question: 'Which symbol is used for comments in Python?',
+      option1: '//',
+      option2: '#',
+      option3: '--',
+      option4: '/* */',
+      correct_option: 2,
+      difficulty: 'easy',
+      explanation: 'Python uses # for single-line comments.'
+    },
+    {
+      id: 13,
+      section_id: 3,
+      question: 'What is the output of len("Python")?',
+      option1: '5',
+      option2: '6',
+      option3: '7',
+      option4: '8',
+      correct_option: 2,
+      difficulty: 'medium',
+      explanation: 'The word Python contains 6 characters.'
+    },
+    {
+      id: 14,
+      section_id: 3,
+      question: 'Which data type stores True or False values?',
+      option1: 'str',
+      option2: 'int',
+      option3: 'bool',
+      option4: 'list',
+      correct_option: 3,
+      difficulty: 'medium',
+      explanation: 'The bool type stores Boolean values.'
+    },
+    {
+      id: 15,
+      section_id: 3,
+      question: 'What will be the output of print(type([]))?',
+      option1: "&lt;class 'tuple'&gt;",
+      option2: "&lt;class 'list'&gt;",
+      option3: "&lt;class 'dict'&gt;",
+      option4: "&lt;class 'set'&gt;",
+      correct_option: 2,
+      difficulty: 'hard',
+      explanation: 'Square brackets create a list object in Python.'
+    }
+
   ],
   results: []
 };
@@ -103,7 +165,7 @@ const db = {
   createAIQuiz: async (title, questions) => {
     const data = readData();
     const newSectionId = data.sections.length > 0 ? Math.max(...data.sections.map(s => s.id)) + 1 : 1;
-    
+
     // Add new section
     data.sections.push({
       id: newSectionId,
